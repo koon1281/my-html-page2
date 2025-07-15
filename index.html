@@ -1,15 +1,2007 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>레시피 매니저</title>
-<!-- CSS and script content were extracted and combined from the DOCX file -->
-<!-- For brevity, not repeated here, but the actual saved file includes all full content -->
-<!-- Make sure to paste the full HTML content extracted from the DOCX here if running locally -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>레시피 매니저</title>
+  <style>
+    :root {
+      --bg-color: #e0e5ec;
+      --main-color: #3498db;
+      --shadow-light: #ffffff;
+      --shadow-dark: #a3b1c6;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: "Helvetica Neue", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-color);
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem;
+      background: var(--bg-color);
+      box-shadow: inset 5px 5px 10px var(--shadow-dark),
+                  inset -5px -5px 10px var(--shadow-light);
+      position: relative;
+      z-index: 10;
+    }
+
+    .sidebar-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--bg-color);
+      box-shadow: 5px 5px 10px var(--shadow-dark),
+                  -5px -5px 10px var(--shadow-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .program-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+      flex-grow: 1;
+      color: #333;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -400px;
+      width: 150px;
+      height: 100%;
+      background: var(--bg-color);
+      box-shadow: 10px 0 20px rgba(0, 0, 0, 0.1);
+      padding: 1rem;
+      transition: left 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .sidebar.show {
+      left: 0;
+    }
+
+    .sidebar button {
+      margin: 0.5rem 0;
+      padding: 0.75rem;
+      background: var(--bg-color);
+      border: none;
+      border-radius: 12px;
+      box-shadow: 5px 5px 10px var(--shadow-dark),
+                  -5px -5px 10px var(--shadow-light);
+      font-size: 1rem;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    main {
+      padding: 1rem;
+    }
+
+    #content h2 {
+      margin-top: 0;
+    }
+
+    .menu-description, .unit-settings {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 5px 5px 10px var(--shadow-dark),
+                  -5px -5px 10px var(--shadow-light);
+      line-height: 1.6;
+    }
+
+    .menu-description strong {
+      color: var(--main-color);
+    }
+
+    .unit-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .unit-item button {
+      margin-left: 1rem;
+      background: #f66;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+    }
+
+    .unit-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .unit-input input {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .unit-input button {
+      background: var(--main-color);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+
+    /* 재료 메뉴 스타일 */
+    .ingredients-container {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 5px 5px 10px var(--shadow-dark),
+                  -5px -5px 10px var(--shadow-light);
+    }
+
+    .ingredients-controls {
+      margin-bottom: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .ingredients-controls button {
+      flex: 1 1 120px;
+      padding: 0.5rem;
+      background: var(--main-color);
+      border: none;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 3px 3px 6px var(--shadow-dark),
+                  -3px -3px 6px var(--shadow-light);
+      transition: background-color 0.2s ease;
+    }
+    .ingredients-controls button:hover {
+      background: #217dbb;
+    }
+
+    /* 재료 추가 폼 */
+    .ingredient-add-form {
+      margin-bottom: 1rem;
+      background: #f9f9f9;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: inset 2px 2px 5px var(--shadow-light),
+                  inset -2px -2px 5px var(--shadow-dark);
+      display: none;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .ingredient-add-form.show {
+      display: flex;
+    }
+
+    .ingredient-add-form label {
+      flex: 1 0 70px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    .ingredient-add-form input,
+    .ingredient-add-form select {
+      flex: 1 1 120px;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .ingredient-add-form button {
+      flex: 1 1 120px;
+      background: var(--main-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem;
+      cursor: pointer;
+      box-shadow: 3px 3px 6px var(--shadow-dark),
+                  -3px -3px 6px var(--shadow-light);
+      transition: background-color 0.2s ease;
+    }
+    .ingredient-add-form button:hover {
+      background: #217dbb;
+    }
+
+    /* 재료 리스트 테이블 */
+    table.ingredients-table {
+      width: 100%;
+      table-layout: auto;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 5px 5px 10px var(--shadow-dark),
+                  -5px -5px 10px var(--shadow-light);
+    }
+
+    table.ingredients-table thead {
+      background: var(--main-color);
+      color: white;
+    }
+
+    table.ingredients-table th,
+    table.ingredients-table td {
+      padding: 0.6rem 0.8rem;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      vertical-align: middle;
+    }
+
+    table.ingredients-table td button.delete-btn {
+      background: #e74c3c;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    table.ingredients-table td button.delete-btn:hover {
+      background: #c0392b;
+    }
+
+    /* 전체 삭제 확인 */
+    .confirm-delete-container {
+      margin-top: 1rem;
+      background: #fff3f3;
+      border: 1px solid #e74c3c;
+      color: #c0392b;
+      padding: 1rem;
+      border-radius: 12px;
+      display: none;
+      gap: 1rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .confirm-delete-container.show {
+      display: flex;
+    }
+
+    .confirm-delete-container button {
+      padding: 0.5rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .confirm-delete-container button.delete-confirm {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .confirm-delete-container button.delete-cancel {
+      background: #ccc;
+      color: #333;
+    }
+
+    @media (max-width: 600px) {
+      .program-title {
+        font-size: 1.2rem;
+      }
+
+      .sidebar {
+    width: 80%;
+    left: -80%;
+  }
+  .sidebar.show {
+    left: 0;
+  }
+
+      .ingredient-add-form,
+  .editor-left,
+  .editor-right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ingredient-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ingredient-row input,
+  .ingredient-row select {
+    width: 100%;
+  }
+      .ingredients-table {
+    font-size: 0.85rem;
+  }
+    }
+    .editor-container {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.editor-left, .editor-right {
+  flex: 1;
+  background: var(--bg-color);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: inset 5px 5px 10px var(--shadow-dark),
+              inset -5px -5px 10px var(--shadow-light);
+}
+
+.editor-right {
+  flex: 3;
+  background: var(--bg-color);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: inset 5px 5px 10px var(--shadow-dark),
+              inset -5px -5px 10px var(--shadow-light);
+}
+
+.editor-header {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.editor-input, .editor-textarea {
+  width: 100%;
+  padding: 0.6rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  border: none;
+  box-shadow: inset 3px 3px 6px var(--shadow-dark),
+              inset -3px -3px 6px var(--shadow-light);
+  background: var(--bg-color);
+  resize: vertical;
+}
+
+.btn-main {
+  background: var(--main-color);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem 1.2rem;
+  box-shadow: 3px 3px 6px var(--shadow-dark),
+              -3px -3px 6px var(--shadow-light);
+  cursor: pointer;
+}
+
+.btn-sub {
+  background: var(--bg-color);
+  color: #333;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  box-shadow: 3px 3px 6px var(--shadow-dark),
+              -3px -3px 6px var(--shadow-light);
+  cursor: pointer;
+}
+
+.section-container {
+  margin-top: 1rem;
+}
+
+.preview-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 5px 5px 10px var(--shadow-dark),
+              -5px -5px 10px var(--shadow-light);
+  overflow-x: auto;
+  font-size: 0.9rem;
+}
+
+.recipe-section {
+  background: #f9f9f9;
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: inset 3px 3px 6px var(--shadow-light),
+              inset -3px -3px 6px var(--shadow-dark);
+}
+
+.ingredient-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  align-items: center;
+}
+.preview-card table {
+  width: auto;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 3px 3px 8px var(--shadow-dark),
+              -3px -3px 8px var(--shadow-light);
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+.preview-card thead {
+  background: var(--main-color);
+  color: #333;
+}
+
+.preview-card th,
+.preview-card td {
+  padding: 0.6rem 0.8rem;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  vertical-align: middle;
+}
+
+.preview-card th:first-child,
+.preview-card td:first-child {
+  border-left: none;
+}
+
+.preview-card tr:last-child td {
+  border-bottom: none;
+}
+
+.preview-card tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.prep-action-btn {
+  background: var(--bg-color);
+  border: none;
+  border-radius: 8px;
+  padding: 0.3rem 0.6rem;
+  margin: 0 0.2rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 5px var(--shadow-dark),
+              -2px -2px 5px var(--shadow-light);
+  transition: all 0.2s ease;
+}
+
+.prep-action-btn:hover {
+  background: #d0d8e0;
+  transform: translateY(-1px);
+}
+
+/* 프랩 테이블 열 너비 줄이기 */
+table.ingredients-table th.small-col,
+table.ingredients-table td.small-col {
+  width: 60px;
+  min-width: 50px;
+  padding: 0.3rem 0.4rem;
+}
+
+table.ingredients-table th.small-coll,
+table.ingredients-table td.small-coll {
+  width: 60px;
+  min-width: 50px;
+  padding: 0.3rem 0.4rem;
+}
+
+
+  </style>
 </head>
 <body>
-<!-- Full HTML content goes here -->
-<p>이 파일은 DOCX 문서에서 추출된 전체 HTML입니다. 실제로는 전체 코드가 여기에 포함되어야 합니다.</p>
+  <header>
+    <div class="sidebar-button" onclick="toggleSidebar()">☰</div>
+    <div class="program-title">레시피 매니저</div>
+  </header>
+
+  <div id="sidebar" class="sidebar">
+    <button onclick="openMenu('home')">홈</button>
+    <button onclick="openMenu('prep')">프랩</button>
+    <button onclick="openMenu('recipe')">레시피</button>
+    <button onclick="openMenu('ingredients')">재료</button>
+    <button onclick="openMenu('settings')">설정</button>
+    <button onclick="openMenu('convert')">컨버트</button>
+    <hr />
+    <button onclick="exportAllData()">전체 내보내기</button>
+    <button onclick="importAllData()">전체 불러오기</button>
+  </div>
+
+  <main>
+    <div id="content">메뉴를 선택하세요.</div>
+  </main>
+  
+<datalist id="ingredientNamesList"></datalist>
+
+  <!-- SheetJS 라이브러리 CDN -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/shim.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+
+  <script>
+    const unitList = ["g", "kg", "ml", "L", "개", "마리", "줄기"];
+
+    let ingredients = [];
+
+    // Sidebar toggle
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('show');
+    }
+
+    // 메뉴 오픈 함수
+    function openMenu(menuName) {
+      const content = document.getElementById('content');
+      document.getElementById('sidebar').classList.remove('show');;
+
+      let html = '';
+      switch (menuName) {
+        case 'home':
+          html = `
+            <h2>홈 - 기능 설명서</h2>
+            <div class="menu-description">
+              <p><strong>프랩</strong>: 작업 전 준비 과정을 기록하고 관리합니다.</p>
+              <p><strong>레시피</strong>: 요리 레시피를 등록하고 필요한 재료를 설정합니다.</p>
+              <p><strong>재료</strong>: 재료 목록과 단가 등을 관리합니다.</p>
+              <p><strong>설정</strong>: 단위 설정 등 환경 설정을 할 수 있습니다.</p>
+              <p><strong>컨버트</strong>: 단위 변환 및 데이터 변환을 지원합니다.</p>
+            </div>`;
+          break;
+
+        case 'settings':
+          html = `
+            <h2>설정 - 단위 관리</h2>
+            <div class="unit-settings">
+              <div id="unit-list"></div>
+              <div class="unit-input">
+                <input type="text" id="newUnit" placeholder="새 단위 입력" />
+                <button onclick="addUnit()">저장</button>
+              </div>
+            </div>`;
+          break;
+
+        case 'ingredients':
+          html = renderIngredientsMenuHTML();
+          break;
+
+		case 'recipe':
+  html = renderRecipeMenuHTML();
+  setTimeout(() => renderRecipeList(), 0);  // 렌더 후 리스트 표시
+  break;
+
+case 'prep':
+  html = renderPrepMenuHTML();
+  setTimeout(() => renderPrepList(), 0);
+  break;
+
+case 'convert':
+  html = `
+    <h2>컨버트 메뉴</h2>
+    <div class="ingredients-container">
+      <div class="ingredients-controls">
+        <button onclick="openRecipeSelector()">레시피 불러오기</button>
+        <button onclick="exportRecipePdf()">PDF로 저장</button>
+      </div>
+      <div class="preview-card" id="convertPreview"></div>
+    </div>
+  `;
+  break;
+
+
+        default:
+          html = `<h2>${menuName}</h2><p>${menuName} 관련 기능이 여기에 표시됩니다.</p>`;
+      }
+
+      content.innerHTML = html;
+
+      if (menuName === 'settings') {
+        renderUnitList();
+      } else if (menuName === 'ingredients') {
+        renderUnitListForIngredients();
+        renderIngredientsTable();
+        attachIngredientFormEvents();
+      }
+    }
+
+    // 단위 목록 렌더링 (설정 메뉴)
+    function renderUnitList() {
+      const list = document.getElementById("unit-list");
+      list.innerHTML = '';
+      unitList.forEach((unit, index) => {
+        const item = document.createElement("div");
+        item.className = "unit-item";
+        item.innerHTML = `${unit} <button onclick="deleteUnit(${index})">삭제</button>`;
+        list.appendChild(item);
+      });
+    }
+
+    // 단위 목록 렌더링 (재료 메뉴 - 단위 select 박스용)
+    function renderUnitListForIngredients() {
+      const select = document.getElementById("ingredientUnit");
+      if (!select) return;
+      select.innerHTML = '';
+      unitList.forEach(u => {
+        const option = document.createElement("option");
+        option.value = u;
+        option.textContent = u;
+        select.appendChild(option);
+      });
+    }
+
+    function addUnit() {
+      const input = document.getElementById("newUnit");
+      const newUnit = input.value.trim();
+      if (newUnit === '') {
+        alert("단위명을 입력하세요.");
+        return;
+      }
+      if (unitList.includes(newUnit)) {
+        alert("이미 등록된 단위입니다.");
+        return;
+      }
+      unitList.push(newUnit);
+      input.value = '';
+      renderUnitList();
+    }
+
+    function deleteUnit(index) {
+      if (confirm(`단위 "${unitList[index]}" 을(를) 삭제하시겠습니까?`)) {
+        unitList.splice(index, 1);
+        renderUnitList();
+      }
+    }
+
+    // 재료 메뉴 HTML 반환
+    function renderIngredientsMenuHTML() {
+      return `
+        <h2>재료 관리</h2>
+        <div class="ingredients-container">
+
+          <div class="ingredients-controls">
+            <button id="btnAddIngredient">재료 추가</button>
+            <button id="btnExportIngredients">재료 리스트 엑셀 내보내기</button>
+            <button id="btnImportIngredients">재료 리스트 엑셀 불러오기</button>
+            <button id="btnClearIngredients">재료 리스트 전체 삭제</button>
+          </div>
+
+          <form id="ingredientAddForm" class="ingredient-add-form" onsubmit="return false;">
+            <label for="ingredientCategory">분류</label>
+            <input type="text" id="ingredientCategory" placeholder="분류 입력" />
+
+            <label for="ingredientName">재료명<span style="color:#e74c3c">*</span></label>
+            <input type="text" id="ingredientName" placeholder="재료명 입력 (필수)" required />
+
+            <label for="ingredientPrice">재료 가격</label>
+            <input type="number" id="ingredientPrice" min="0" placeholder="숫자만 입력" />
+
+            <label for="ingredientQuantity">재료 수량</label>
+            <input type="number" id="ingredientQuantity" min="0" step="any" placeholder="숫자만 입력" />
+
+            <label for="ingredientUnit">단위</label>
+            <select id="ingredientUnit"></select>
+
+            <button id="btnRegisterIngredient" type="submit">재료 등록</button>
+          </form>
+
+          <table class="ingredients-table" id="ingredientsTable" border="1" cellspacing="0" cellpadding="4">
+            <thead>
+              <tr>
+                <th>분류</th>
+                <th>재료명</th>
+                <th>재료 가격</th>
+                <th>재료 수량</th>
+                <th>단위</th>
+                <th>재료 단가</th>
+                <th>삭제</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+
+          <div class="confirm-delete-container" id="confirmDeleteContainer">
+            <span>재료 리스트를 모두 삭제하시겠습니까?</span>
+            <button class="delete-confirm" id="confirmDeleteBtn">삭제</button>
+            <button class="delete-cancel" id="cancelDeleteBtn">취소</button>
+          </div>
+        </div>
+      `;
+    }
+    
+    function renderPrepMenuHTML() {
+  return `
+    <h2>프랩 관리</h2>
+    <div class="ingredients-container">
+      <div class="ingredients-controls">
+        <button onclick="togglePrepForm()">프랩 추가</button>
+        <button onclick="exportPrepExcel()">프랩 리스트 엑셀 내보내기</button>
+        <button onclick="importPrepExcel()">프랩 리스트 엑셀 불러오기</button>
+        <button onclick="confirmClearPrepList()">프랩 리스트 전체 삭제</button>
+      </div>
+
+      <form id="prepForm" class="ingredient-add-form" style="display:none;" onsubmit="return false;">
+  <label for="prepName">요리명</label>
+  <input type="text" id="prepName" placeholder="요리명 입력" required />
+
+  <label for="prepText">프랩</label>
+  <textarea id="prepText" placeholder="프랩 입력"></textarea>
+
+  <button onclick="savePrep()">프랩 저장</button>
+</form>
+
+      </form>
+
+      <table class="ingredients-table">
+        <thead>
+          <tr>
+            <th style="white-space: nowrap;">요리명</th>
+            <th>프랩</th>
+            <th>순서</th>
+            <th>수정</th>
+            <th>삭제</th>
+          </tr>
+        </thead>
+        <tbody id="prepListBody"></tbody>
+      </table>
+
+      <div class="confirm-delete-container" id="prepDeleteConfirmBox">
+        <span>프랩 리스트를 모두 삭제하시겠습니까?</span>
+        <button class="delete-confirm" onclick="clearPrepList()">삭제</button>
+        <button class="delete-cancel" onclick="cancelClearPrepList()">취소</button>
+      </div>
+    </div>
+  `;
+}
+
+    
+    function renderRecipeMenuHTML() {
+  return `
+    <h2>레시피 메뉴</h2>
+    <div class="ingredients-container">
+      <div class="ingredients-controls">
+        <button onclick="openRecipeEditor()">레시피 추가</button>
+        <button onclick="importRecipeExcel()">레시피 엑셀 불러오기</button>
+      </div>
+      <table class="ingredients-table" id="recipeTable">
+        <thead>
+          <tr>
+            <th>요리명</th>
+            <th>상세보기</th>
+            <th>엑셀 내보내기</th>
+            <th>수정</th>
+            <th>삭제</th>
+          </tr>
+        </thead>
+        <tbody id="recipeListBody"></tbody>
+      </table>
+    </div>
+  `;
+}
+let recipes = [];
+
+let preps = [];
+
+function togglePrepForm() {
+  const form = document.getElementById('prepForm');
+  form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+}
+
+function savePrep() {
+  const name = document.getElementById('prepName').value.trim();
+  const text = document.getElementById('prepText').value.trim();
+
+  if (!name) {
+    alert('요리명을 입력해주세요.');
+    return;
+  }
+
+  const existing = preps.findIndex(p => p.name === name);
+  if (existing !== -1) {
+    if (!confirm(`"${name}" 프랩이 이미 존재합니다. 덮어쓰시겠습니까?`)) return;
+    preps[existing] = { name, text };
+  } else {
+    preps.push({ name, text });
+  }
+
+  document.getElementById('prepName').value = '';
+  document.getElementById('prepText').value = '';
+  togglePrepForm();
+  renderPrepList();
+}
+
+function renderPrepList() {
+  const tbody = document.getElementById('prepListBody');
+  tbody.innerHTML = '';
+
+  preps.forEach((prep, i) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+  <td style="white-space: nowrap;">${prep.name}</td>
+  <td style="white-space:pre-line;">${prep.text}</td>
+  <td class="small-col">
+    <button class="prep-action-btn" onclick="movePrep(${i}, -1)">⬆</button>
+    <button class="prep-action-btn" onclick="movePrep(${i}, 1)">⬇</button>
+  </td>
+  <td class="small-col">
+    <button class="prep-action-btn" onclick="editPrep(${i})">✏️</button>
+  </td>
+  <td class="small-col">
+    <button class="prep-action-btn" onclick="confirmDeletePrep(${i})">🗑️</button>
+  </td>
+`;
+
+    tbody.appendChild(row);
+  });
+}
+
+function editPrep(index) {
+  const prep = preps[index];
+  document.getElementById('prepName').value = prep.name;
+  document.getElementById('prepText').value = prep.text;
+  togglePrepForm();
+}
+
+function movePrep(index, direction) {
+  const target = index + direction;
+  if (target < 0 || target >= preps.length) return;
+  [preps[index], preps[target]] = [preps[target], preps[index]];
+  renderPrepList();
+}
+
+function confirmDeletePrep(index) {
+  if (confirm(`"${preps[index].name}" 프랩을 삭제하시겠습니까?`)) {
+    preps.splice(index, 1);
+    renderPrepList();
+  }
+}
+
+
+function renderRecipeList() {
+  const tbody = document.getElementById('recipeListBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  recipes.forEach((recipe, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${recipe.name}</td>
+      <td><button class="prep-action-btn" onclick="viewRecipeDetail(${index})">상세보기</button></td>
+      <td><button class="prep-action-btn" onclick="exportRecipeExcel(${index})">엑셀 내보내기</button></td>
+      <td><button class="prep-action-btn" onclick="editRecipe(${index})">수정</button></td>
+      <td><button class="prep-action-btn" onclick="confirmDeleteRecipe(${index})">삭제</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+
+    // 재료 단가 계산 함수
+    function calcUnitPrice(price, quantity, unit) {
+      if (!price || price <= 0 || !quantity || quantity <= 0) return '';
+      let adjustedQuantity = quantity;
+      if (unit === 'kg' || unit === 'L') {
+        adjustedQuantity = quantity * 1000;
+      }
+      return (price / adjustedQuantity).toFixed(2);
+    }
+
+    // 재료 등록 처리
+    function registerIngredient() {
+      const category = document.getElementById('ingredientCategory').value.trim();
+      const name = document.getElementById('ingredientName').value.trim();
+      const priceRaw = document.getElementById('ingredientPrice').value.trim();
+      const quantityRaw = document.getElementById('ingredientQuantity').value.trim();
+      const unit = document.getElementById('ingredientUnit').value;
+
+      if (name === '') {
+        alert("재료명은 필수입니다.");
+        return;
+      }
+
+      if (ingredients.some(i => i.name === name)) {
+        alert("중복되는 재료명이 있습니다.");
+        return;
+      }
+
+      const price = priceRaw === '' ? 0 : parseFloat(priceRaw);
+      const quantity = quantityRaw === '' ? 0 : parseFloat(quantityRaw);
+
+      const unitPrice = calcUnitPrice(price, quantity, unit);
+
+      ingredients.push({
+        category,
+        name,
+        price,
+        quantity,
+        unit,
+        unitPrice,
+      });
+
+      clearIngredientForm();
+      renderIngredientsTable();
+    }
+
+    // 재료 추가 폼 초기화
+    function clearIngredientForm() {
+      document.getElementById('ingredientCategory').value = '';
+      document.getElementById('ingredientName').value = '';
+      document.getElementById('ingredientPrice').value = '';
+      document.getElementById('ingredientQuantity').value = '';
+      document.getElementById('ingredientUnit').selectedIndex = 0;
+    }
+
+    // 재료 리스트 테이블 렌더링
+    function renderIngredientsTable() {
+      const tbody = document.querySelector('#ingredientsTable tbody');
+      tbody.innerHTML = '';
+
+      ingredients.forEach((ing, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${ing.category}</td>
+          <td>${ing.name}</td>
+          <td>${ing.price || ''}</td>
+          <td>${ing.quantity || ''}</td>
+          <td>${ing.unit}</td>
+          <td>${ing.unitPrice}</td>
+          <td><button class="delete-btn" onclick="deleteIngredient(${index})">삭제</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // 재료 삭제
+    function deleteIngredient(index) {
+      if (confirm(`"${ingredients[index].name}" 재료를 삭제하시겠습니까?`)) {
+        ingredients.splice(index, 1);
+        renderIngredientsTable();
+      }
+    }
+
+    // 재료 리스트 엑셀 내보내기
+    function exportIngredientsExcel() {
+      if (ingredients.length === 0) {
+        alert("내보낼 재료 데이터가 없습니다.");
+        return;
+      }
+
+      // 워크북과 워크시트 생성
+      const wb = XLSX.utils.book_new();
+
+      // 재료 데이터를 시트용 배열로 변환
+      const data = [
+        ["분류", "재료명", "재료 가격", "재료 수량", "단위", "재료 단가"],
+      ];
+      ingredients.forEach(ing => {
+        data.push([
+          ing.category,
+          ing.name,
+          ing.price,
+          ing.quantity,
+          ing.unit,
+          ing.unitPrice
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, "재료리스트");
+
+      // 엑셀 파일 생성
+      XLSX.writeFile(wb, "재료리스트.xlsx");
+    }
+
+    // 재료 리스트 엑셀 불러오기
+    function importIngredientsExcel() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = ".xlsx, .xls";
+      input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = evt => {
+          const data = new Uint8Array(evt.target.result);
+          const wb = XLSX.read(data, { type: 'array' });
+          const wsName = wb.SheetNames[0];
+          const ws = wb.Sheets[wsName];
+          const importedData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+          // 첫 행은 헤더
+          const header = importedData[0];
+          if (!header || header.length < 6) {
+            alert("엑셀 파일 형식이 올바르지 않습니다.");
+            return;
+          }
+
+          // 나머지 행 데이터
+          const rows = importedData.slice(1).filter(r => r.length > 0);
+
+          // 중복 재료명 체크
+          let duplicates = [];
+          for (let row of rows) {
+            const name = row[1];
+            if (ingredients.some(i => i.name === name)) {
+              duplicates.push(name);
+            }
+          }
+
+          // 덮어쓰기 여부 확인
+          if (duplicates.length > 0) {
+            const overwrite = confirm(`중복되는 재료명(${duplicates.join(", ")})이 있습니다. 덮어쓰시겠습니까? (확인: 덮어쓰기, 취소: 유지)`);
+            rows.forEach(row => {
+              const obj = {
+                category: row[0] || '',
+                name: row[1] || '',
+                price: parseFloat(row[2]) || 0,
+                quantity: parseFloat(row[3]) || 0,
+                unit: row[4] || '',
+                unitPrice: '',
+              };
+              obj.unitPrice = calcUnitPrice(obj.price, obj.quantity, obj.unit);
+
+              if (obj.name === '') return; // 이름 없으면 스킵
+
+              const existingIndex = ingredients.findIndex(i => i.name === obj.name);
+              if (existingIndex !== -1) {
+                if (overwrite) {
+                  ingredients[existingIndex] = obj;
+                }
+              } else {
+                ingredients.push(obj);
+              }
+            });
+          } else {
+            // 중복 없으면 그냥 추가
+            rows.forEach(row => {
+              const obj = {
+                category: row[0] || '',
+                name: row[1] || '',
+                price: parseFloat(row[2]) || 0,
+                quantity: parseFloat(row[3]) || 0,
+                unit: row[4] || '',
+                unitPrice: '',
+              };
+              obj.unitPrice = calcUnitPrice(obj.price, obj.quantity, obj.unit);
+
+              if (obj.name === '') return;
+
+              ingredients.push(obj);
+            });
+          }
+
+          renderIngredientsTable();
+        };
+        reader.readAsArrayBuffer(file);
+      };
+      input.click();
+    }
+
+    // 전체 재료 리스트 삭제 - 확인 UI 띄우기
+    function clearIngredientsWithConfirm() {
+      const confirmBox = document.getElementById('confirmDeleteContainer');
+      confirmBox.classList.add('show');
+    }
+
+    // 삭제 확인 취소
+    function cancelClearIngredients() {
+      const confirmBox = document.getElementById('confirmDeleteContainer');
+      confirmBox.classList.remove('show');
+    }
+
+    // 삭제 확인 후 실제 삭제
+    function confirmClearIngredients() {
+      ingredients = [];
+      renderIngredientsTable();
+      cancelClearIngredients();
+    }
+
+    // 재료 추가 폼 이벤트 연결
+    function attachIngredientFormEvents() {
+      document.getElementById('btnAddIngredient').onclick = () => {
+        const form = document.getElementById('ingredientAddForm');
+        form.classList.toggle('show');
+      };
+      document.getElementById('btnRegisterIngredient').onclick = registerIngredient;
+      document.getElementById('btnExportIngredients').onclick = exportIngredientsExcel;
+      document.getElementById('btnImportIngredients').onclick = importIngredientsExcel;
+      document.getElementById('btnClearIngredients').onclick = clearIngredientsWithConfirm;
+      document.getElementById('confirmDeleteBtn').onclick = confirmClearIngredients;
+      document.getElementById('cancelDeleteBtn').onclick = cancelClearIngredients;
+    }
+
+    // 전체 데이터 내보내기/불러오기 자리 표시자 (추후 확장 가능)
+    function exportAllData() {
+  const wb = XLSX.utils.book_new();
+
+  // 프랩 시트
+  const prepSheet = XLSX.utils.json_to_sheet(preps);
+  XLSX.utils.book_append_sheet(wb, prepSheet, '프랩');
+
+  // 레시피 시트 (JSON 문자열화)
+  const recipeJson = recipes.map(r => [JSON.stringify(r)]);
+  const recipeSheet = XLSX.utils.aoa_to_sheet([["레시피 JSON"]].concat(recipeJson));
+  XLSX.utils.book_append_sheet(wb, recipeSheet, '레시피');
+
+  // 재료 시트
+  const ingredientSheet = XLSX.utils.json_to_sheet(ingredients);
+  XLSX.utils.book_append_sheet(wb, ingredientSheet, '재료');
+
+  // 단위 시트
+  const unitSheet = XLSX.utils.aoa_to_sheet([["단위 리스트"], ...unitList.map(u => [u])]);
+  XLSX.utils.book_append_sheet(wb, unitSheet, '단위');
+
+  XLSX.writeFile(wb, '전체_데이터.xlsx');
+}
+
+
+    function importAllData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = ".xlsx, .xls";
+
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = evt => {
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+
+      // 프랩
+      const prepRows = XLSX.utils.sheet_to_json(wb.Sheets['프랩'] || {}, { header: 1 });
+      preps = prepRows.slice(1).map(([name, text]) => ({ name, text }));
+
+      // 레시피
+      const recipeRows = XLSX.utils.sheet_to_json(wb.Sheets['레시피'] || {}, { header: 1 });
+      recipes = recipeRows.slice(1).map(row => {
+        try {
+          return JSON.parse(row[0]);
+        } catch (e) {
+          return null;
+        }
+      }).filter(r => r !== null);
+
+      // 재료
+      const ingredientRows = XLSX.utils.sheet_to_json(wb.Sheets['재료'] || {}, { header: 1 });
+      ingredients = ingredientRows.slice(1).map(([category, name, price, quantity, unit, unitPrice]) => ({
+        category,
+        name,
+        price,
+        quantity,
+        unit,
+        unitPrice
+      }));
+
+      // 단위
+      const unitRows = XLSX.utils.sheet_to_json(wb.Sheets['단위'] || {}, { header: 1 });
+      unitList.length = 0; // 기존 단위 초기화
+      unitRows.slice(1).forEach(row => {
+        if (row[0]) unitList.push(row[0]);
+      });
+
+      renderPrepList();
+      renderRecipeList();
+      renderIngredientsTable();
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  input.click();
+}
+
+
+    
+    let recipeSectionIndex = 0;
+
+function addRecipeSection() {
+  const container = document.getElementById('recipeSections');
+  const sectionId = `section-${recipeSectionIndex++}`;
+  const section = document.createElement('div');
+  section.className = 'recipe-section';
+  section.dataset.id = sectionId;
+
+  section.innerHTML = `
+    <hr />
+    <label>분류명</label><br/>
+    <input type="text" class="section-name" placeholder="예: 소스, 본체 등" style="width: 100%;" /><br/><br/>
+    <label>소분 수량</label><br/>
+    <input type="number" class="portion-quantity" placeholder="예: 10" style="width: 100%;" /><br/><br/>
+    <button class="prep-action-btn" onclick="addIngredientToSection('${sectionId}')">재료 추가</button>
+    <button class="prep-action-btn" onclick="removeRecipeSection(this)">분류 추가 취소</button>
+    <div class="ingredients-in-section"></div>
+  `;
+  container.appendChild(section);
+  
+  // 이벤트 바인딩
+  bindPreviewEventsToElement(section.querySelector('.section-name'));
+  bindPreviewEventsToElement(section.querySelector('.portion-quantity'));
+
+  renderRecipePreview()
+}
+function removeRecipeSection(btn) {
+  const section = btn.closest('.recipe-section');
+  section.remove();
+}
+function addIngredientToSection(sectionId) {
+  const section = document.querySelector(`.recipe-section[data-id="${sectionId}"] .ingredients-in-section`);
+  const ingDiv = document.createElement('div');
+  ingDiv.className = 'ingredient-row';
+  ingDiv.style.marginBottom = '1rem';
+
+  ingDiv.innerHTML = `
+    <label>재료명</label>
+    <input type="text" class="ingredient-name" style="width: 150px;" onblur="populateIngredientInfo(this)" />
+
+    <label>사용량</label>
+    <input type="number" class="ingredient-amount" style="width: 80px;" />
+
+    <label>단위</label>
+    <select class="ingredient-unit" style="width: 80px;">
+      ${unitList.map(unit => `<option value="${unit}">${unit}</option>`).join('')}
+    </select>
+
+    <button class="prep-action-btn" onclick="removeIngredient(this)">재료 추가 취소</button>
+
+    <div class="ingredient-info" style="font-size: 0.9em; color: #666; margin-top: 4px;"></div>
+  `;
+  section.appendChild(ingDiv);
+
+  // 이벤트 바인딩
+  bindPreviewEventsToElement(ingDiv.querySelector('.ingredient-name'));
+  bindPreviewEventsToElement(ingDiv.querySelector('.ingredient-amount'));
+  bindPreviewEventsToElement(ingDiv.querySelector('.ingredient-unit'));
+
+  renderRecipePreview();
+}
+
+function removeIngredient(btn) {
+  const row = btn.closest('.ingredient-row');
+  row.remove();
+}
+function populateIngredientInfo(input) {
+  const name = input.value.trim();
+  const infoBox = input.parentElement.querySelector('.ingredient-info');
+  const found = ingredients.find(i => i.name === name);
+  if (found) {
+    infoBox.innerHTML = `수량: ${found.quantity}, 단위: ${found.unit}, 가격: ${found.price}, 단가: ${found.unitPrice}`;
+  } else {
+    infoBox.innerHTML = `<span style="color:red;">등록되지 않은 재료입니다.</span>`;
+  }
+}
+function renderRecipePreview() {
+  const name = document.getElementById('recipeName').value.trim();
+  const price = parseFloat(document.getElementById('recipePrice').value) || 0;
+
+  const sectionElements = document.querySelectorAll('.recipe-section');
+
+  let totalCost = 0;
+  const sectionData = [];
+
+  sectionElements.forEach(section => {
+    const sectionName = section.querySelector('.section-name').value.trim();
+    const portionQtyRaw = section.querySelector('.portion-quantity').value.trim();
+    const portionQty = portionQtyRaw === '' ? null : parseFloat(portionQtyRaw);
+    const ingredients = section.querySelectorAll('.ingredient-row');
+
+    const ingList = [];
+    let sectionUsageSum = 0;
+    let sectionCostSum = 0;
+
+    ingredients.forEach(ing => {
+      const ingName = ing.querySelector('.ingredient-name').value.trim();
+      const amount = parseFloat(ing.querySelector('.ingredient-amount').value) || 0;
+      const unit = ing.querySelector('.ingredient-unit').value;
+      const ingMeta = getIngredientMeta(ingName);
+
+      let usedUnitPrice = 0;
+      if (ingMeta) {
+        usedUnitPrice = unit === 'kg' || unit === 'L'
+          ? ingMeta.unitPrice * (amount * 1000)
+          : ingMeta.unitPrice * amount;
+      }
+
+      sectionUsageSum += amount;
+      sectionCostSum += usedUnitPrice;
+
+      ingList.push({
+        name: ingName,
+        amount,
+        unit,
+        usedUnitPrice: usedUnitPrice.toFixed(2),
+        ...ingMeta
+      });
+    });
+
+    let sectionSubtotal = 0;
+
+if (portionQty === null || portionQty === '' || isNaN(portionQty)) {
+  // 소분 수량이 없을 경우 → 사용 단가 합계만 출력
+  sectionSubtotal = sectionCostSum;
+} else {
+  // 소분 수량이 있는 경우 → (단가 합계 ÷ 사용량 합계) × 소분 수량
+  if (sectionUsageSum > 0) {
+    sectionSubtotal = (sectionCostSum / sectionUsageSum) * portionQty;
+  }
+}
+
+
+
+    totalCost += sectionSubtotal;
+
+    sectionData.push({
+      name: sectionName,
+      portionQty,
+      ingredients: ingList,
+      subtotal: sectionSubtotal.toFixed(2)
+    });
+  });
+
+  const costRatio = price > 0 ? ((totalCost / price) * 100).toFixed(1) + "%" : "-";
+
+  let html = `
+    <p><strong>요리명:</strong> ${name}</p>
+    <p><strong>총원가:</strong> ${totalCost.toFixed(2)} 원</p>
+    <p><strong>판매가:</strong> ${price} 원</p>
+    <p><strong>원가율:</strong> ${costRatio}</p>
+    <table border="1" cellspacing="0" cellpadding="4" style="width:100%; font-size:0.9em; border-collapse: collapse; background: #fff;">
+      <thead style="background:#f0f0f0;">
+        <tr>
+          <th>분류명</th>
+          <th>재료명</th>
+          <th>사용량</th>
+          <th>사용 단위</th>
+          <th>사용 단가</th>
+          <th>재료 수량</th>
+          <th>재료 단위</th>
+          <th>재료 가격</th>
+          <th>재료 단가</th>
+          <th>소분 수량</th>
+          <th>소계</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  sectionData.forEach(sec => {
+    sec.ingredients.forEach((ing, idx) => {
+      html += `
+        <tr>
+          ${idx === 0 ? `<td rowspan="${sec.ingredients.length}">${sec.name}</td>` : ''}
+          <td>${ing.name}</td>
+          <td>${ing.amount}</td>
+          <td>${ing.unit}</td>
+          <td>${ing.usedUnitPrice}</td>
+          <td>${ing.quantity || ''}</td>
+          <td>${ing.unit || ''}</td>
+          <td>${ing.price || ''}</td>
+          <td>${ing.unitPrice || ''}</td>
+          ${idx === 0 ? `<td rowspan="${sec.ingredients.length}">${sec.portionQty ?? ''}</td>` : ''}
+          ${idx === 0 ? `<td rowspan="${sec.ingredients.length}">${sec.subtotal}</td>` : ''}
+        </tr>
+      `;
+    });
+  });
+
+  html += `</tbody></table>`;
+
+  document.getElementById('recipePreview').innerHTML = html;
+}
+function getIngredientMeta(name) {
+  const found = ingredients.find(i => i.name === name);
+  return found ? { ...found } : {};
+}
+function saveRecipe(editIndex = null) {
+  const name = document.getElementById('recipeName').value.trim();
+  const price = parseFloat(document.getElementById('recipePrice').value) || 0;
+  const steps = document.getElementById('recipeSteps').value.trim();
+  const memo = document.getElementById('recipeMemo').value.trim();
+
+  if (!name) {
+    alert('요리명을 입력해주세요.');
+    return;
+  }
+
+  const sections = [];
+  const sectionElements = document.querySelectorAll('.recipe-section');
+  sectionElements.forEach(section => {
+    const sectionName = section.querySelector('.section-name').value.trim();
+    const portionQtyRaw = section.querySelector('.portion-quantity').value.trim();
+    const portionQty = portionQtyRaw === '' ? null : parseFloat(portionQtyRaw);
+
+    const ingredients = [];
+    section.querySelectorAll('.ingredient-row').forEach(row => {
+      const ingName = row.querySelector('.ingredient-name').value.trim();
+      const amount = parseFloat(row.querySelector('.ingredient-amount').value) || 0;
+      const unit = row.querySelector('.ingredient-unit').value;
+
+      ingredients.push({ name: ingName, amount, unit });
+    });
+
+    sections.push({ sectionName, portionQty, ingredients });
+  });
+
+  const recipeObj = {
+    name,
+    price,
+    steps,
+    memo,
+    sections
+  };
+
+  if (editIndex !== null && recipes[editIndex]) {
+    recipes[editIndex] = recipeObj;
+  } else {
+    recipes.push(recipeObj);
+  }
+
+  openMenu('recipe');
+  renderRecipeList();
+}
+function editRecipe(index) {
+  const recipe = recipes[index];
+  openRecipeEditor(index);
+
+  setTimeout(() => {
+    document.getElementById('recipeName').value = recipe.name;
+    document.getElementById('recipePrice').value = recipe.price;
+    document.getElementById('recipeSteps').value = recipe.steps || '';
+    document.getElementById('recipeMemo').value = recipe.memo || '';
+
+    recipe.sections.forEach(section => {
+      addRecipeSection();
+      const latestSection = document.querySelector('.recipe-section:last-child');
+      latestSection.querySelector('.section-name').value = section.sectionName;
+      if (section.portionQty !== null) {
+        latestSection.querySelector('.portion-quantity').value = section.portionQty;
+      }
+
+      section.ingredients.forEach(ing => {
+        addIngredientToSection(latestSection.dataset.id);
+        const latestIng = latestSection.querySelector('.ingredient-row:last-child');
+        latestIng.querySelector('.ingredient-name').value = ing.name;
+        latestIng.querySelector('.ingredient-amount').value = ing.amount;
+        latestIng.querySelector('.ingredient-unit').value = ing.unit;
+        populateIngredientInfo(latestIng.querySelector('.ingredient-name'));
+      });
+    });
+
+    renderRecipePreview();
+  }, 0);
+}
+function editRecipe(index) {
+  const recipe = recipes[index];
+  openRecipeEditor(index);
+
+  setTimeout(() => {
+    document.getElementById('recipeName').value = recipe.name;
+    document.getElementById('recipePrice').value = recipe.price;
+    document.getElementById('recipeSteps').value = recipe.steps || '';
+    document.getElementById('recipeMemo').value = recipe.memo || '';
+
+    recipe.sections.forEach(section => {
+      addRecipeSection();
+      const latestSection = document.querySelector('.recipe-section:last-child');
+      latestSection.querySelector('.section-name').value = section.sectionName;
+      if (section.portionQty !== null) {
+        latestSection.querySelector('.portion-quantity').value = section.portionQty;
+      }
+
+      section.ingredients.forEach(ing => {
+        addIngredientToSection(latestSection.dataset.id);
+        const latestIng = latestSection.querySelector('.ingredient-row:last-child');
+        latestIng.querySelector('.ingredient-name').value = ing.name;
+        latestIng.querySelector('.ingredient-amount').value = ing.amount;
+        latestIng.querySelector('.ingredient-unit').value = ing.unit;
+        populateIngredientInfo(latestIng.querySelector('.ingredient-name'));
+      });
+    });
+
+    renderRecipePreview();
+  }, 0);
+}
+function exportRecipeExcel(index) {
+  const recipe = recipes[index];
+  if (!recipe) return;
+
+  const data = [
+    ["요리명", recipe.name],
+    ["판매가", recipe.price],
+    [],
+    ["플레이팅 순서", recipe.steps],
+    [],
+    ["메모", recipe.memo],
+    [],
+    ["분류명", "소분 수량", "재료명", "사용량", "단위"]
+  ];
+
+  recipe.sections.forEach(sec => {
+    sec.ingredients.forEach((ing, i) => {
+      data.push([
+        i === 0 ? sec.sectionName : "",
+        i === 0 ? (sec.portionQty ?? "") : "",
+        ing.name,
+        ing.amount,
+        ing.unit
+      ]);
+    });
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, recipe.name);
+  XLSX.writeFile(wb, `${recipe.name}_레시피.xlsx`);
+}
+function confirmDeleteRecipe(index) {
+  const recipe = recipes[index];
+  if (!recipe) return;
+
+  const ok = confirm(`"${recipe.name}" 레시피를 삭제하시겠습니까?`);
+  if (ok) {
+    recipes.splice(index, 1);
+    renderRecipeList();
+  }
+}
+function importRecipeExcel() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = ".xlsx, .xls";
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const wsName = wb.SheetNames[0];
+      const ws = wb.Sheets[wsName];
+      const sheetData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      if (sheetData.length < 8) {
+        alert("엑셀 파일 형식이 올바르지 않습니다.");
+        return;
+      }
+
+      const name = sheetData[0][1] || "제목 없음";
+      const price = parseFloat(sheetData[1][1]) || 0;
+      const steps = (sheetData[3] || [])[1] || '';
+      const memo = (sheetData[5] || [])[1] || '';
+
+      const recipeSections = [];
+      let currentSection = null;
+
+      for (let i = 8; i < sheetData.length; i++) {
+        const row = sheetData[i];
+        const sectionName = row[0] || (currentSection ? '' : null);
+        const portionQty = row[1] !== '' ? parseFloat(row[1]) : null;
+        const ingredientName = row[2];
+        const amount = parseFloat(row[3]) || 0;
+        const unit = row[4];
+
+        if (!ingredientName) continue;
+
+        if (sectionName !== '') {
+          currentSection = {
+            sectionName,
+            portionQty,
+            ingredients: []
+          };
+          recipeSections.push(currentSection);
+        }
+
+        currentSection.ingredients.push({
+          name: ingredientName,
+          amount,
+          unit
+        });
+      }
+
+      const newRecipe = {
+        name,
+        price,
+        steps,
+        memo,
+        sections: recipeSections
+      };
+
+      const existingIndex = recipes.findIndex(r => r.name === name);
+      if (existingIndex !== -1) {
+        const overwrite = confirm(`"${name}" 레시피가 이미 존재합니다. 덮어쓰시겠습니까?`);
+        if (overwrite) {
+          recipes[existingIndex] = newRecipe;
+        }
+      } else {
+        recipes.push(newRecipe);
+      }
+
+      openMenu('recipe');
+      renderRecipeList();
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
+  input.click();
+}
+function bindPreviewEventsToElement(element) {
+  if (!element) return;
+  element.addEventListener('input', renderRecipePreview);
+  element.addEventListener('change', renderRecipePreview);
+  element.addEventListener('blur', renderRecipePreview);
+}
+function removeRecipeSection(btn) {
+  const section = btn.closest('.recipe-section');
+  section.remove();
+  renderRecipePreview();
+}
+
+function removeIngredient(btn) {
+  const row = btn.closest('.ingredient-row');
+  row.remove();
+  renderRecipePreview();
+}
+function viewRecipeDetail(index) {
+  const recipe = recipes[index];
+  if (!recipe) {
+    alert('레시피를 찾을 수 없습니다.');
+    return;
+  }
+
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="editor-container">
+      <div class="editor-left">
+        <h2>${recipe.name}</h2>
+        <p><strong>판매가:</strong> ${recipe.price || '-'} 원</p>
+        <p><strong>플레이팅 순서:</strong><br/>${(recipe.steps || '').replace(/\n/g, '<br/>')}</p>
+        <p><strong>메모:</strong><br/>${(recipe.memo || '').replace(/\n/g, '<br/>')}</p>
+        <button class="btn-sub" onclick="openMenu('recipe')">돌아가기</button>
+        <button class="btn-sub" onclick="editRecipe(${index})">수정</button>
+      </div>
+      <div class="editor-right">
+        <h3>서류 미리보기</h3>
+        <div id="recipePreview" class="preview-card"></div>
+      </div>
+    </div>
+  `;
+
+  // 에디터가 아닌, 오른쪽 미리보기만 렌더링
+  renderRecipePreviewFromData(recipe);
+}
+function renderRecipePreviewFromData(recipe) {
+  const sectionData = [];
+  let totalCost = 0;
+
+  recipe.sections.forEach(sec => {
+    let sectionCostSum = 0;
+    let sectionUsageSum = 0;
+    const ingList = [];
+
+    sec.ingredients.forEach(ing => {
+      const meta = getIngredientMeta(ing.name);
+      const amount = ing.amount || 0;
+      let usedUnitPrice = 0;
+
+      if (meta.unitPrice) {
+        usedUnitPrice = ing.unit === 'kg' || ing.unit === 'L'
+          ? meta.unitPrice * (amount * 1000)
+          : meta.unitPrice * amount;
+      }
+
+      sectionCostSum += usedUnitPrice;
+      sectionUsageSum += amount;
+
+      ingList.push({
+        ...meta,
+        name: ing.name,
+        amount,
+        unit: ing.unit,
+        usedUnitPrice: usedUnitPrice.toFixed(2),
+      });
+    });
+
+    let subtotal = 0;
+    const portionQty = sec.portionQty;
+
+    if (portionQty === null || portionQty === '' || isNaN(portionQty)) {
+      subtotal = sectionCostSum;
+    } else if (sectionUsageSum > 0) {
+      subtotal = (sectionCostSum / sectionUsageSum) * portionQty;
+    }
+
+    totalCost += subtotal;
+
+    sectionData.push({
+      name: sec.sectionName,
+      portionQty,
+      ingredients: ingList,
+      subtotal: subtotal.toFixed(2),
+    });
+  });
+
+  const costRatio = recipe.price > 0 ? ((totalCost / recipe.price) * 100).toFixed(1) + "%" : "-";
+
+  let html = `
+    <p><strong>요리명:</strong> ${recipe.name}</p>
+    <p><strong>총원가:</strong> ${totalCost.toFixed(2)} 원</p>
+    <p><strong>판매가:</strong> ${recipe.price} 원</p>
+    <p><strong>원가율:</strong> ${costRatio}</p>
+    <table class="preview-table">
+      <thead>
+        <tr>
+          <th>분류명</th>
+          <th>재료명</th>
+          <th>사용량</th>
+          <th>단위</th>
+          <th>사용 단가</th>
+          <th>재료 수량</th>
+          <th>재료 단위</th>
+          <th>재료 가격</th>
+          <th>재료 단가</th>
+          <th>소분 수량</th>
+          <th>소계</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  sectionData.forEach((sec, idx) => {
+    const sectionId = `sec-detail-${idx}`;
+    sec.ingredients.forEach((ing, i) => {
+      html += `
+        <tr class="${sectionId}">
+          ${i === 0 ? `<td rowspan="${sec.ingredients.length}">${sec.name}</td>` : ''}
+          <td>${ing.name}</td>
+          <td>${ing.amount}</td>
+          <td>${ing.unit}</td>
+          <td>${ing.usedUnitPrice}</td>
+          <td>${ing.quantity || ''}</td>
+          <td>${ing.unit || ''}</td>
+          <td>${ing.price || ''}</td>
+          <td>${ing.unitPrice || ''}</td>
+          ${i === 0 ? `<td rowspan="${sec.ingredients.length}">${sec.portionQty ?? ''}</td>` : ''}
+          ${i === 0 ? `<td rowspan="${sec.ingredients.length}">${sec.subtotal}</td>` : ''}
+        </tr>
+      `;
+    });
+  });
+
+  html += `</tbody></table>`;
+  document.getElementById('recipePreview').innerHTML = html;
+}
+
+    
+function openRecipeEditor(index = null) {
+  // index: null이면 새로 작성, 숫자면 수정
+  const recipe = index !== null ? recipes[index] : null;
+
+  const content = document.getElementById('content');
+  content.innerHTML = `
+  <div class="editor-container">
+    <div class="editor-left">
+      <div class="editor-header">
+        <button class="btn-main" onclick="saveRecipe(${index})">레시피 저장</button>
+        <button class="btn-sub" onclick="openMenu('recipe')">등록 취소</button>
+      </div>
+      <div class="editor-form">
+        <label>요리명</label>
+        <input type="text" id="recipeName" class="editor-input" />
+
+        <label>판매가</label>
+        <input type="number" id="recipePrice" class="editor-input" />
+
+        <label>플레이팅 순서</label>
+        <textarea id="recipeSteps" class="editor-textarea" rows="3"></textarea>
+
+        <label>메모</label>
+        <textarea id="recipeMemo" class="editor-textarea" rows="3"></textarea>
+
+        <div id="recipeSections" class="section-container"></div>
+        <button class="btn-sub" onclick="addRecipeSection()" style="margin-top: 1rem;">+ 분류 추가</button>
+      </div>
+    </div>
+    <div class="editor-right">
+      <h3>서류 미리보기</h3>
+      <div id="recipePreview" class="preview-card"></div>
+    </div>
+  </div>
+`;
+
+  
+setTimeout(() => {
+    const previewTriggerElements = document.querySelectorAll(
+      '#recipeName, #recipePrice, #recipeSteps, #recipeMemo, .section-name, .portion-quantity, .ingredient-name, .ingredient-amount, .ingredient-unit'
+    );
+
+    previewTriggerElements.forEach(el => {
+      el.removeEventListener('input', renderRecipePreview);
+      el.removeEventListener('change', renderRecipePreview);
+      el.removeEventListener('blur', renderRecipePreview);
+
+      el.addEventListener('input', renderRecipePreview);
+      el.addEventListener('change', renderRecipePreview);
+      el.addEventListener('blur', renderRecipePreview);
+    });
+
+    // 최초 1회 미리보기 렌더
+    renderRecipePreview();
+  }, 0); // 또는 50, 100 등
+}
+
+function exportPrepExcel() {
+  if (preps.length === 0) {
+    alert("내보낼 프랩이 없습니다.");
+    return;
+  }
+
+  const data = [["요리명", "프랩"]];
+  preps.forEach(p => data.push([p.name, p.text]));
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "프랩리스트");
+  XLSX.writeFile(wb, "프랩리스트.xlsx");
+}
+
+function importPrepExcel() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = ".xlsx, .xls";
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = evt => {
+      const data = new Uint8Array(evt.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      if (!rows || rows.length < 2) {
+        alert("엑셀 데이터가 올바르지 않습니다.");
+        return;
+      }
+
+      const imported = rows.slice(1);
+      const duplicates = [];
+
+      imported.forEach(([name, text]) => {
+        const existingIndex = preps.findIndex(p => p.name === name);
+        if (existingIndex !== -1) duplicates.push(name);
+      });
+
+      if (duplicates.length > 0) {
+        const overwrite = confirm(`중복 프랩 존재 (${duplicates.join(", ")}). 덮어쓰시겠습니까?`);
+        imported.forEach(([name, text]) => {
+          if (!name) return;
+          const idx = preps.findIndex(p => p.name === name);
+          if (idx !== -1) {
+            if (overwrite) preps[idx] = { name, text };
+          } else {
+            preps.push({ name, text });
+          }
+        });
+      } else {
+        imported.forEach(([name, text]) => {
+          if (name) preps.push({ name, text });
+        });
+      }
+
+      renderPrepList();
+    };
+    reader.readAsArrayBuffer(file);
+  };
+  input.click();
+}
+
+function confirmClearPrepList() {
+  document.getElementById('prepDeleteConfirmBox').classList.add('show');
+}
+
+function cancelClearPrepList() {
+  document.getElementById('prepDeleteConfirmBox').classList.remove('show');
+}
+
+function clearPrepList() {
+  preps = [];
+  renderPrepList();
+  cancelClearPrepList();
+}
+function openRecipeSelector() {
+  if (recipes.length === 0) {
+    alert("등록된 레시피가 없습니다.");
+    return;
+  }
+
+  const names = recipes.map((r, i) => `${i + 1}. ${r.name}`).join('\n');
+  const input = prompt(`불러올 레시피 번호를 선택하세요:\n\n${names}`);
+
+  const index = parseInt(input) - 1;
+  if (isNaN(index) || index < 0 || index >= recipes.length) {
+    alert("잘못된 번호입니다.");
+    return;
+  }
+
+  renderConvertPreview(recipes[index]);
+}
+
+function renderConvertPreview(recipe) {
+  const container = document.getElementById('convertPreview');
+  if (!container) return;
+
+  const temp = document.createElement('div');
+  temp.innerHTML = `<div id="recipePreview"></div>`;
+  document.body.appendChild(temp);
+
+  renderRecipePreviewFromData(recipe);
+
+  const html = document.getElementById('recipePreview').innerHTML;
+  container.innerHTML = html;
+
+  temp.remove();
+}
+function exportRecipePdf() {
+  const container = document.getElementById('convertPreview');
+  if (!container) {
+    alert("미리보기 영역이 없습니다.");
+    return;
+  }
+
+  const nameMatch = container.innerHTML.match(/<strong>요리명:<\/strong>\s*(.*?)<\/p>/);
+  const recipeName = nameMatch ? nameMatch[1].trim().replace(/[\\/:*?"<>|]/g, "_") : '레시피';
+
+  // 스타일 삽입
+  const style = document.createElement('style');
+  style.innerHTML = `
+    #convertPreview td, #convertPreview th {
+      white-space: normal !important;
+      word-break: break-word !important;
+      vertical-align: top !important;
+      padding: 6px !important;
+      font-size: 0.9em;
+    }
+    #convertPreview table {
+      table-layout: auto !important;
+    }
+    #convertPreview p {
+      white-space: normal !important;
+      word-break: break-word !important;
+    }
+  `;
+  container.appendChild(style);
+
+  const opt = {
+    margin: 0.5,
+    filename: `${recipeName}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(container).save().then(() => {
+    style.remove();
+  });
+}
+
+
+
+
+
+  </script>
 </body>
 </html>
